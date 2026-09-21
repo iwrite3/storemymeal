@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Know My Meal </title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #fff0f5; /* Lavender Blush / Soft Pink */
+            color: #4a4a4a;
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 550px;
+            background: #ffffff;
+            padding: 2.5rem;
+            border-radius: 24px;
+            box-shadow: 0 10px 25px rgba(255, 182, 193, 0.4);
+            border: 2px solid #ffc0cb;
+        }
+        h2 {
+            color: #d81b60;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #f8bbd0;
+            border-radius: 12px;
+            outline: none;
+            font-size: 1rem;
+            background-color: #fffbfd;
+        }
+        input[type="text"]:focus {
+            border-color: #ec407a;
+        }
+        button {
+            padding: 12px 20px;
+            background-color: #ec407a;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #d81b60;
+        }
+        .secondary-btn {
+            background-color: #f8bbd0;
+            color: #880e4f;
+            width: 100%;
+            margin-top: 1rem;
+        }
+        .secondary-btn:hover {
+            background-color: #f48fb1;
+        }
+        .card {
+            border: 2px dashed #f8bbd0;
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin-top: 1.5rem;
+            background-color: #fff9fb;
+        }
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.6rem;
+            border-bottom: 1px dotted #f8bbd0;
+            padding-bottom: 6px;
+        }
+        #loading {
+            text-align: center;
+            color: #ad1457;
+            font-style: italic;
+            margin-top: 1rem;
+            display: none;
+        }
+        .heart {
+            color: #ec407a;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2> Know My Meal </h2>
+
+    <form id="mealForm">
+        <div class="input-group">
+            <input type="text" id="mealInput" placeholder="What did you eat today? (e.g., oats & peanut butter)" required>
+            <button type="submit">Analyze </button>
+        </div>
+    </form>
+
+    <button class="secondary-btn" onclick="fetchTodaySummary()"> Today's Totals </button>
+
+    <div id="loading">Cooking up your nutrition facts... 🍳✨</div>
+
+    <div id="result" class="card" style="display:none;">
+        <h3 id="resFood" style="margin-top: 0; color: #ad1457;"></h3>
+
+        <div class="stat"><strong>Calories:</strong> <span id="resCal"></span></div>
+        <div class="stat"><strong>Protein:</strong> <span id="resPro"></span></div>
+        <div class="stat"><strong>Fat:</strong> <span id="resFat"></span></div>
+        <div class="stat"><strong>Fiber:</strong> <span id="resFib"></span></div>
+
+        <h4 style="margin-top: 1.2rem; margin-bottom: 0.4rem; color: #880e4f;">AI Sweet Note 💌</h4>
+        <p id="resSug" style="font-size: 0.95rem; color: #6a1b9a; line-height: 1.4;"></p>
+    </div>
+
+    <div id="todayResult" class="card" style="display:none; border-style: solid; border-color: #ec407a;">
+        <h3 style="margin-top: 0; color: #ad1457; text-align: center;">🌸 Today's Totals 🌸</h3>
+        <div class="stat"><strong>Total Meals Logged:</strong> <span id="todaysCount"></span></div>
+        <div class="stat"><strong>Total Calories:</strong> <span id="todaysCal"></span></div>
+        <div class="stat"><strong>Total Protein:</strong> <span id="todaysPro"></span></div>
+        <div class="stat"><strong>Total Fat:</strong> <span id="todaysFat"></span></div>
+        <div class="stat"><strong>Total Fiber:</strong> <span id="todaysFib"></span></div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('mealForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const meal = document.getElementById('mealInput').value;
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+        const todayResult = document.getElementById('todayResult');
+        const submitBtn = document.querySelector('button[type="submit"]');
+
+        loading.style.display = 'block';
+        result.style.display = 'none';
+        todayResult.style.display = 'none';
+        submitBtn.disabled = true;
+
+        try {
+            const response = await fetch('/api/nutrition/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ meal: meal })
+            });
+
+            if (response.status === 429) {
+                const errData = await response.json();
+                alert(errData.error);
+                return;
+            }
+
+            if (!response.ok) throw new Error("Failed to fetch data");
+
+            const data = await response.json();
+
+            document.getElementById('resFood').innerText = data.foodName;
+            document.getElementById('resCal').innerText = data.calories + " kcal";
+            document.getElementById('resPro').innerText = data.protein + " g";
+            document.getElementById('resFat').innerText = data.fat + " g";
+            document.getElementById('resFib').innerText = data.fiber + " g";
+            document.getElementById('resSug').innerText = data.aiSuggestion;
+
+            loading.style.display = 'none';
+            result.style.display = 'block';
+        } catch (error) {
+            alert('Oopsie! Something went wrong analyzing your meal. 🥺');
+            loading.style.display = 'none';
+        } finally {
+            submitBtn.disabled = false;
+        }
+    });
+
+    async function fetchTodaySummary() {
+        const result = document.getElementById('result');
+        const todayResult = document.getElementById('todayResult');
+
+        result.style.display = 'none';
+
+        try {
+            const response = await fetch('/api/nutrition/today');
+            if (!response.ok) throw new Error("Could not fetch today summary");
+
+            const data = await response.json();
+
+            document.getElementById('todaysCount').innerText = data.count;
+            document.getElementById('todaysCal').innerText = data.calories.toFixed(1) + " kcal";
+            document.getElementById('todaysPro').innerText = data.protein.toFixed(1) + " g";
+            document.getElementById('todaysFat').innerText = data.fat.toFixed(1) + " g";
+            document.getElementById('todaysFib').innerText = data.fiber.toFixed(1) + " g";
+
+            todayResult.style.display = 'block';
+        } catch (error) {
+            alert('Could not load today summary! 🥺');
+        }
+    }
+</script>
+</body>
+</html>
