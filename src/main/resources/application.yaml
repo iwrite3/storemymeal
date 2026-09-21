@@ -23,4 +23,4 @@ deepseek:
     url: ${DEEPSEEK_API_URL:https://api.deepseek.com/chat/completions}
 
 app:
-  mock-ai: ${MOCK_AI:true}
+  mock-ai: true
